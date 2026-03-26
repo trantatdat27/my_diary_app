@@ -1,10 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/diary_model.dart';
 
-class DiaryController {
+class DiaryController with ChangeNotifier {
+  // Trỏ tới collection 'diaries' trên Firestore
   final CollectionReference _db = FirebaseFirestore.instance.collection('diaries');
 
-  // 1. Lấy dữ liệu Stream
+  // 1. Cung cấp Stream để HomeScreen lắng nghe realtime
   Stream<List<Diary>> get diariesStream {
     return _db.orderBy('date', descending: true).snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -13,16 +15,30 @@ class DiaryController {
     });
   }
 
-  // 2. Hàm thêm mới
-  Future<void> addDiary(Diary diary) async {
-    await _db.add(diary.toMap());
+  // 2. Hàm Thêm mới lên Firestore
+  Future<void> addDiary(String title, String content, String date, String mood) async {
+    try {
+      final newDiary = Diary(
+        title: title,
+        content: content,
+        date: date, // Nhận chuỗi ngày tháng đã được định dạng
+        mood: mood,
+        thumbnailImageUrl: 'https://cdn-icons-png.flaticon.com/512/1000/1000957.png',
+      );
+
+      // Đẩy dữ liệu lên Cloud
+      await _db.add(newDiary.toMap());
+      notifyListeners();
+    } catch (e) {
+      print("Lỗi khi thêm bài viết: $e");
+    }
   }
 
-  // 3. HÀM XÓA (Thêm hàm này để hết lỗi đỏ)
+  // 3. Hàm Xóa trên Firestore (Dành cho sau này nếu bạn muốn thêm tính năng xóa)
   Future<void> deleteDiary(String id) async {
     try {
       await _db.doc(id).delete();
-      print("Đã xóa bài viết thành công");
+      notifyListeners();
     } catch (e) {
       print("Lỗi khi xóa: $e");
     }
