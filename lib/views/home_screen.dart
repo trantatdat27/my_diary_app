@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildNavItem(Icons.home_filled, 0),
             _buildNavItem(Icons.calendar_today_outlined, 1),
             const SizedBox(width: 48),
-            _buildNavItem(Icons.insert_chart_outlined, 2),
+            _buildNavItem(Icons.person_outline_rounded, 2),
             _buildNavItem(Icons.settings_outlined, 3),
           ],
         ),
