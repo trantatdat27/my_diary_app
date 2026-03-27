@@ -1,16 +1,21 @@
-import 'package:firebase_core/firebase_core.dart'; // Thêm dòng này
+import 'package:firebase_auth/firebase_auth.dart'; // Thêm thư viện Auth
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/diary_controller.dart';
 import 'views/home_screen.dart';
+import 'views/auth_screen.dart'; // Giả sử bạn đặt tên file đăng nhập là auth_screen.dart
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Bắt buộc phải có để kết nối Firebase
+  await Firebase.initializeApp();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => DiaryController(),
+    // Sử dụng MultiProvider để dễ dàng mở rộng thêm các Controller khác sau này
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => DiaryController()),
+      ],
       child: const CuteDiaryApp(),
     ),
   );
@@ -42,7 +47,24 @@ class CuteDiaryApp extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         ),
       ),
-      home: const HomeScreen(),
+      // Logic kiểm tra trạng thái đăng nhập ngay tại đây
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          // Nếu đang kiểm tra kết nối
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          // Nếu đã đăng nhập thành công (snapshot có dữ liệu User)
+          if (snapshot.hasData) {
+            return const HomeScreen();
+          }
+          // Nếu chưa đăng nhập
+          return const AuthScreen();
+        },
+      ),
       debugShowCheckedModeBanner: false,
     );
   }
