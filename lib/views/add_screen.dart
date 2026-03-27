@@ -5,7 +5,8 @@ import '../controllers/diary_controller.dart';
 import '../models/diary_model.dart';
 
 class AddScreen extends StatefulWidget {
-  const AddScreen({super.key});
+  final Diary? diary; // Thêm tham số để nhận dữ liệu khi sửa
+  const AddScreen({super.key, this.diary});
 
   @override
   State<AddScreen> createState() => _AddScreenState();
@@ -16,22 +17,48 @@ class _AddScreenState extends State<AddScreen> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
-  String _selectedMood = '😊'; // Mặc định là vui vẻ
+  String _selectedMood = '😊';
 
   final List<String> _moods = ['😊', '🤩', '🥳', '😢', '😡', '😴'];
 
+  @override
+  void initState() {
+    super.initState();
+    // Nếu là chế độ chỉnh sửa, đổ dữ liệu cũ vào form
+    if (widget.diary != null) {
+      _titleController.text = widget.diary!.title;
+      _contentController.text = widget.diary!.content;
+      _selectedMood = widget.diary!.mood;
+      // Lưu ý: Có thể cần parse widget.diary!.date thành DateTime nếu muốn giữ nguyên ngày cũ
+    }
+  }
+
   void _submitData() {
     if (_formKey.currentState!.validate()) {
-      // Ép kiểu ngày giờ thành chuỗi (ví dụ: 2023-10-25 14:30) để lưu lên firebase
       String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(_selectedDate);
+      final diaryController = Provider.of<DiaryController>(context, listen: false);
 
-      Provider.of<DiaryController>(context, listen: false).addDiary(
-        _titleController.text,
-        _contentController.text,
-        formattedDate, // Chuyền chuỗi ngày tháng vào đây
-        _selectedMood,
-      );
-      Navigator.pop(context); // Quay lại màn hình chính
+      if (widget.diary == null) {
+        // Chế độ THÊM MỚI
+        diaryController.addDiary(
+          _titleController.text,
+          _contentController.text,
+          formattedDate,
+          _selectedMood,
+        );
+        Navigator.pop(context);
+      } else {
+        // Chế độ CẬP NHẬT
+        diaryController.updateDiary(
+          widget.diary!.id!,
+          _titleController.text,
+          _contentController.text,
+          formattedDate,
+          _selectedMood,
+        );
+        // Quay về màn hình chính sau khi sửa
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     }
   }
 
@@ -39,7 +66,7 @@ class _AddScreenState extends State<AddScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("TẠO BÀI MỚI"),
+        title: Text(widget.diary == null ? "TẠO BÀI MỚI" : "CHỈNH SỬA"),
         actions: [
           IconButton(onPressed: _submitData, icon: const Icon(Icons.check_outlined)),
         ],
@@ -51,83 +78,38 @@ class _AddScreenState extends State<AddScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Phông tiêu đề nhỏ
-              Text(
-                "Hôm nay bạn thấy thế nào?",
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              Text("Hôm nay bạn thấy thế nào?", style: TextStyle(color: Colors.grey[600])),
               const SizedBox(height: 10),
-
-              // 2. PHẦN CHỌN CẢM XÚC - SỬA LỖI TRÀN VIỀN Ở ĐÂY
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: _moods.map((mood) => Expanded( // Bọc Expanded để chia đều không gian ngang
-                  child: FittedBox( // Bọc FittedBox để tự động thu nhỏ nội dung
-                    fit: BoxFit.scaleDown, // Tự động scale xuống nếu icon quá lớn
+                children: _moods.map((mood) => Expanded(
+                  child: FittedBox(
                     child: GestureDetector(
                       onTap: () => setState(() => _selectedMood = mood),
                       child: Container(
-                        padding: const EdgeInsets.all(8), // Giữ padding cho dễ thương
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: _selectedMood == mood
-                              ? const Color(0xFFFDE8E8) // Màu nền hồng pastel khi chọn
-                              : Colors.transparent,
+                          color: _selectedMood == mood ? const Color(0xFFFDE8E8) : Colors.transparent,
                           shape: BoxShape.circle,
                         ),
-                        child: Text(
-                          mood,
-                          style: const TextStyle(fontSize: 35), // Kích thước chữ gốc (35)
-                          textAlign: TextAlign.center, // Đảm bảo căn giữa
-                        ),
+                        child: Text(mood, style: const TextStyle(fontSize: 35)),
                       ),
                     ),
                   ),
                 )).toList(),
               ),
               const SizedBox(height: 25),
-
-              // 3. Ngày giờ (Hiện tại chưa có picker, tạm thời hiển thị)
-              Text(
-                "Ngày: ${DateFormat('dd/MM/yyyy HH:mm').format(_selectedDate)}",
-                style: const TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-              const SizedBox(height: 15),
-
-              // 4. Nhập tiêu đề
               TextFormField(
                 controller: _titleController,
-                decoration: InputDecoration(
-                  labelText: "Tiêu đề",
-                  labelStyle: const TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-                  ),
-                ),
-                style: Theme.of(context).textTheme.titleLarge,
-                validator: (val) => val == null || val.isEmpty ? 'Hãy nhập tiêu đề nhé' : null,
+                decoration: InputDecoration(labelText: "Tiêu đề", border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
+                validator: (val) => val == null || val.isEmpty ? 'Hãy nhập tiêu đề' : null,
               ),
               const SizedBox(height: 15),
-
-              // 5. Nhập nội dung
               TextFormField(
                 controller: _contentController,
-                maxLines: 15, // Cho phép nhập nhiều dòng
-                decoration: InputDecoration(
-                  labelText: "Hôm nay của bạn thế nào? Chia sẻ câu chuyện của bạn...",
-                  labelStyle: const TextStyle(color: Colors.grey),
-                  alignLabelWithHint: true, // Căn label lên đầu ô nhập
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-                  ),
-                ),
-                validator: (val) => val == null || val.isEmpty ? 'Hãy viết gì đó nhé...' : null,
+                maxLines: 15,
+                decoration: InputDecoration(labelText: "Nội dung", border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
+                validator: (val) => val == null || val.isEmpty ? 'Hãy viết gì đó' : null,
               ),
             ],
           ),

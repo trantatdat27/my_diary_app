@@ -21,12 +21,10 @@ class DiaryController with ChangeNotifier {
       final newDiary = Diary(
         title: title,
         content: content,
-        date: date, // Nhận chuỗi ngày tháng đã được định dạng
+        date: date,
         mood: mood,
         thumbnailImageUrl: 'https://cdn-icons-png.flaticon.com/512/1000/1000957.png',
       );
-
-      // Đẩy dữ liệu lên Cloud
       await _db.add(newDiary.toMap());
       notifyListeners();
     } catch (e) {
@@ -34,13 +32,28 @@ class DiaryController with ChangeNotifier {
     }
   }
 
-  // 3. Hàm Xóa trên Firestore (Dành cho sau này nếu bạn muốn thêm tính năng xóa)
+  // 3. Hàm Xóa trên Firestore
   Future<void> deleteDiary(String id) async {
     try {
       await _db.doc(id).delete();
       notifyListeners();
     } catch (e) {
       print("Lỗi khi xóa: $e");
+    }
+  }
+
+  // 4. Hàm Cập nhật trên Firestore
+  Future<void> updateDiary(String id, String title, String content, String date, String mood) async {
+    try {
+      await _db.doc(id).update({
+        'title': title,
+        'content': content,
+        'date': date,
+        'mood': mood,
+      });
+      notifyListeners();
+    } catch (e) {
+      print("Lỗi khi cập nhật: $e");
     }
   }
 }
