@@ -4,6 +4,7 @@ import 'package:my_diary_app/controllers/diary_controller.dart' show DiaryContro
 import 'package:my_diary_app/models/diary_model.dart' show Diary;
 import 'package:provider/provider.dart' show Provider;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // Đảm bảo đã có thư viện intl để xử lý ngày tháng
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,6 +20,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _hobbiesController = TextEditingController();
 
+  // --- LOGIC LỌC NHẬT KÝ TRONG 7 NGÀY GẦN NHẤT ---
+  List<Diary> _getRecentDiaries(List<Diary> allDiaries) {
+    final now = DateTime.now();
+    // Xác định mốc thời gian 7 ngày trước (tính từ 00:00 ngày đó để chính xác hơn)
+    final sevenDaysAgo = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 7));
+
+    return allDiaries.where((diary) {
+      try {
+        // Parse chuỗi ngày tháng 'yyyy-MM-dd HH:mm' từ database
+        DateTime diaryDate = DateFormat('yyyy-MM-dd HH:mm').parse(diary.date);
+        return diaryDate.isAfter(sevenDaysAgo);
+      } catch (e) {
+        return false;
+      }
+    }).toList();
+  }
+
   // --- LOGIC TÌM TÂM TRẠNG XUẤT HIỆN NHIỀU NHẤT ---
   String _calculateMostFrequentMood(List<Diary> diaries) {
     if (diaries.isEmpty) return "Chưa có";
@@ -28,11 +46,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       moodCounts[diary.mood] = (moodCounts[diary.mood] ?? 0) + 1;
     }
 
-    // Tìm tâm trạng có số lần xuất hiện cao nhất
     var sortedMoods = moodCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    return sortedMoods.first.key; // Trả về Emoji tâm trạng phổ biến nhất
+    return sortedMoods.first.key;
   }
 
   void _showLogoutDialog(BuildContext context) {
@@ -151,7 +168,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 20),
 
-                // --- PHẦN THỐNG KÊ CẬP NHẬT TÂM TRẠNG THỰC TẾ ---
+                // --- PHẦN THỐNG KÊ 7 NGÀY GẦN NHẤT ---
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 8),
+                    child: Text(
+                      "Thống kê 7 ngày qua",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[600]),
+                    ),
+                  ),
+                ),
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -162,14 +189,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: StreamBuilder<List<Diary>>(
                     stream: diaryController.diariesStream,
                     builder: (context, dSnapshot) {
-                      final diaries = dSnapshot.data ?? [];
-                      final topMood = _calculateMostFrequentMood(diaries);
+                      final allDiaries = dSnapshot.data ?? [];
+
+                      // Lọc danh sách nhật ký chỉ trong 7 ngày gần nhất
+                      final recentDiaries = _getRecentDiaries(allDiaries);
+                      final topMood = _calculateMostFrequentMood(recentDiaries);
 
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStat("Bài viết", "${diaries.length}"),
-                          // Đường kẻ dọc phân cách
+                          _buildStat("Bài viết mới", "${recentDiaries.length}"),
                           Container(width: 1, height: 30, color: Colors.blue.withOpacity(0.1)),
                           _buildStat("Tâm trạng chính", topMood),
                         ],
