@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart'; // Thêm import này
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'pin_lock_screen.dart'; // Import màn hình PIN của bạn
+import 'home_screen.dart';    // Import màn hình chính của bạn
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -23,21 +26,59 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       if (_isLogin) {
-        // CHẾ ĐỘ ĐĂNG NHẬP
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-            email: email, password: password);
+        // --- CHẾ ĐỘ ĐĂNG NHẬP ---
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: email, password: password);
+
+        final user = userCredential.user;
+        if (user != null) {
+          // Kiểm tra cài đặt PIN trong Firestore
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+          bool isPinEnabled = false;
+          if (userDoc.exists) {
+            final data = userDoc.data() as Map<String, dynamic>;
+            isPinEnabled = data['isPinLockEnabled'] ?? false;
+          }
+
+          if (!mounted) return;
+
+          if (isPinEnabled) {
+            // Nếu có bật PIN -> Chuyển đến màn hình nhập PIN
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PinLockScreen(nextScreen: HomeScreen()),
+              ),
+            );
+          } else {
+            // Nếu không bật PIN -> Vào thẳng trang chủ
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            );
+          }
+        }
       } else {
-        // CHẾ ĐỘ ĐĂNG KÝ
+        // --- CHẾ ĐỘ ĐĂNG KÝ ---
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
             email: email, password: password);
+
+        // Sau khi đăng ký xong thường vào thẳng HomeScreen (vì chưa có mã PIN)
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
       }
     } on FirebaseAuthException catch (e) {
       String errorMsg = "Lỗi: ${e.message}";
-      if (e.code == 'email-already-in-use') errorMsg = "Tài khoản này đã có rồi, hãy bấm Đăng nhập nhé!";
-      if (e.code == 'user-not-found') errorMsg = "Email này chưa đăng ký bạn ơi!";
-      if (e.code == 'wrong-password') errorMsg = "Mật khẩu chưa đúng rồi!";
-      if (e.code == 'invalid-email') errorMsg = "Email sai định dạng (thiếu @...)";
-      if (e.code == 'weak-password') errorMsg = "Mật khẩu phải có ít nhất 6 ký tự.";
+      if (e.code == 'email-already-in-use') errorMsg = "Tài khoản này đã có rồi!";
+      if (e.code == 'user-not-found') errorMsg = "Email này chưa đăng ký!";
+      if (e.code == 'wrong-password') errorMsg = "Mật khẩu chưa đúng!";
 
       _showMsg(errorMsg);
     }
@@ -64,11 +105,9 @@ class _AuthScreenState extends State<AuthScreen> {
                 style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFD3A3A3)
-                ),
+                    color: Color(0xFFD3A3A3)),
               ),
               const SizedBox(height: 30),
-
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -76,11 +115,11 @@ class _AuthScreenState extends State<AuthScreen> {
                     labelText: "Email",
                     filled: true,
                     fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)
-                ),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none)),
               ),
               const SizedBox(height: 15),
-
               TextField(
                 controller: _passController,
                 obscureText: true,
@@ -88,28 +127,28 @@ class _AuthScreenState extends State<AuthScreen> {
                     labelText: "Mật khẩu",
                     filled: true,
                     fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)
-                ),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none)),
               ),
               const SizedBox(height: 30),
-
-              // NÚT BẤM CHÍNH
               ElevatedButton(
                 onPressed: _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFFB6C1),
                   minimumSize: const Size(double.infinity, 55),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
                 ),
                 child: Text(
                   _isLogin ? "ĐĂNG NHẬP" : "VÀO NHẬT KÝ",
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
                 ),
-              ), // Đã thêm dấu đóng ngoặc ở đây
-
+              ),
               const SizedBox(height: 15),
-
-              // NÚT CHUYỂN ĐỔI
               TextButton(
                 onPressed: () {
                   setState(() {
@@ -119,8 +158,11 @@ class _AuthScreenState extends State<AuthScreen> {
                   });
                 },
                 child: Text(
-                  _isLogin ? "Chưa có tài khoản? Đăng ký ngay" : "Đã có tài khoản? Đăng nhập",
-                  style: const TextStyle(color: Color(0xFFD3A3A3), fontWeight: FontWeight.bold),
+                  _isLogin
+                      ? "Chưa có tài khoản? Đăng ký ngay"
+                      : "Đã có tài khoản? Đăng nhập",
+                  style: const TextStyle(
+                      color: Color(0xFFD3A3A3), fontWeight: FontWeight.bold),
                 ),
               ),
             ],

@@ -1,17 +1,17 @@
-import 'package:firebase_auth/firebase_auth.dart'; // Thêm thư viện Auth
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/diary_controller.dart';
 import 'views/home_screen.dart';
-import 'views/auth_screen.dart'; // Giả sử bạn đặt tên file đăng nhập là auth_screen.dart
+import 'views/auth_screen.dart';
+import 'views/pin_lock_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-
   runApp(
-    // Sử dụng MultiProvider để dễ dàng mở rộng thêm các Controller khác sau này
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => DiaryController()),
@@ -35,37 +35,49 @@ class CuteDiaryApp extends StatelessWidget {
           primary: const Color(0xFFFFB6C1),
           secondary: const Color(0xFFD3A3A3),
         ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black87,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        cardTheme: CardThemeData(
-          color: Colors.white,
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        ),
       ),
-      // Logic kiểm tra trạng thái đăng nhập ngay tại đây
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          // Nếu đang kiểm tra kết nối
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
-          // Nếu đã đăng nhập thành công (snapshot có dữ liệu User)
           if (snapshot.hasData) {
-            return const HomeScreen();
+            // Nếu đã đăng nhập, dùng AuthWrapper để kiểm tra mã PIN
+            return const AuthWrapper();
           }
-          // Nếu chưa đăng nhập
           return const AuthScreen();
         },
       ),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('users').doc(user!.uid).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        bool isPinEnabled = false;
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          isPinEnabled = data['isPinLockEnabled'] ?? false;
+        }
+
+        if (isPinEnabled) {
+          return const PinLockScreen(nextScreen: HomeScreen());
+        }
+        return const HomeScreen();
+      },
     );
   }
 }

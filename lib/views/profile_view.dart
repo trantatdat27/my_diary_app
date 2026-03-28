@@ -5,6 +5,7 @@ import 'package:my_diary_app/models/diary_model.dart' show Diary;
 import 'package:provider/provider.dart' show Provider;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // Đảm bảo đã có thư viện intl để xử lý ngày tháng
+import 'auth_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -52,22 +53,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return sortedMoods.first.key;
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Xác nhận", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text("Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng không?"),
+        title: const Text("Xác nhận đăng xuất", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text("Bạn có chắc chắn muốn rời khỏi ứng dụng không?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text("Hủy", style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              FirebaseAuth.instance.signOut();
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (!mounted) return;
+              // SỬA TẠI ĐÂY: Quay về AuthScreen ngay lập tức
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const AuthScreen()),
+                    (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
@@ -210,7 +216,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 40),
 
                 InkWell(
-                  onTap: () => _showLogoutDialog(context),
+                  onTap: _showLogoutDialog,
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
                     width: double.infinity,
