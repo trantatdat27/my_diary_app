@@ -56,31 +56,54 @@ class DetailScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24), // Tăng padding cho thoáng
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 5)],
+            borderRadius: BorderRadius.circular(30), // Bo tròn hơn giống Card ở Home
+            boxShadow: [
+              BoxShadow(
+                color: Colors.pink.withOpacity(0.05), // Đổ bóng hồng nhạt nhẹ nhàng
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              )
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(diary.mood, style: const TextStyle(fontSize: 40)),
-                  Text(diary.date, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                  // Hiển thị tâm trạng trong khung tròn nổi bật
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFDE8E8),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(diary.mood, style: const TextStyle(fontSize: 35)),
+                  ),
+                  const SizedBox(width: 15),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Thời gian viết", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text(diary.date, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ],
+                  ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Divider(thickness: 0.8, color: Color(0xFFFDE8E8)),
+              ),
               Text(
                 diary.title,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
               ),
-              const Divider(height: 30, thickness: 1, color: Color(0xFFFDE8E8)),
+              const SizedBox(height: 15),
               Text(
                 diary.content,
-                style: const TextStyle(fontSize: 18, height: 1.6),
+                style: TextStyle(fontSize: 17, height: 1.8, color: Colors.grey[800]), // Tăng khoảng cách dòng cho dễ đọc
               ),
             ],
           ),

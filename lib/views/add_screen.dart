@@ -35,11 +35,13 @@ class _AddScreenState extends State<AddScreen> {
 
   void _submitData() {
     if (_formKey.currentState!.validate()) {
-      String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(_selectedDate);
       final diaryController = Provider.of<DiaryController>(context, listen: false);
 
       if (widget.diary == null) {
-        // Chế độ THÊM MỚI
+        // --- CHẾ ĐỘ THÊM MỚI ---
+        // Chỉ lấy thời gian hiện tại khi tạo bài mới hoàn toàn
+        String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
+
         diaryController.addDiary(
           _titleController.text,
           _contentController.text,
@@ -48,15 +50,17 @@ class _AddScreenState extends State<AddScreen> {
         );
         Navigator.pop(context);
       } else {
-        // Chế độ CẬP NHẬT
+        // --- CHẾ ĐỘ CẬP NHẬT ---
+        // QUAN TRỌNG: Dùng lại widget.diary!.date (ngày cũ) thay vì DateTime.now()
         diaryController.updateDiary(
           widget.diary!.id!,
           _titleController.text,
           _contentController.text,
-          formattedDate,
+          widget.diary!.date, // Giữ nguyên ngày tháng gốc của bài viết
           _selectedMood,
         );
-        // Quay về màn hình chính sau khi sửa
+
+        // Quay về màn hình chính sau khi sửa thành công
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     }
