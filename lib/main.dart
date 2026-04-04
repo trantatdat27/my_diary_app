@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/diary_controller.dart';
+import 'controllers/profile_controller.dart';
 import 'notification_service.dart';
 import 'views/home_screen.dart';
 import 'views/auth_screen.dart';
@@ -17,6 +18,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => DiaryController()),
+        ChangeNotifierProvider(create: (context) => ProfileController()),
       ],
       child: const CuteDiaryApp(),
     ),
