@@ -12,6 +12,7 @@ dependencies:
   firebase_core: ^3.0.0      # Cần thiết để khởi tạo Firebase
   cloud_firestore: ^5.0.0    # Database đám mây (thay thế cho sqflite)
   # --- THƯ VIỆN HỖ TRỢ ---
+  image_picker: ^1.0.7
   intl: ^0.18.1           # Định dạng ngày giờ
   path: ^1.9.0               # Quản lý đường dẫn (vẫn nên để lại để dự phòng)
   provider: ^6.1.1

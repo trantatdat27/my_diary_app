@@ -3,13 +3,13 @@ import 'package:provider/provider.dart';
 import '../models/diary_model.dart';
 import '../controllers/diary_controller.dart';
 import 'add_screen.dart';
+import 'dart:io'; // Quan trọng để đọc file ảnh từ máy
 
 class DetailScreen extends StatelessWidget {
   final Diary diary;
 
   const DetailScreen({super.key, required this.diary});
 
-  // Hàm hiển thị hộp thoại xác nhận xóa
   void _confirmDelete(BuildContext context) {
     showDialog(
       context: context,
@@ -56,13 +56,13 @@ class DetailScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(24), // Tăng padding cho thoáng
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(30), // Bo tròn hơn giống Card ở Home
+            borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.pink.withOpacity(0.05), // Đổ bóng hồng nhạt nhẹ nhàng
+                color: Colors.pink.withOpacity(0.05),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               )
@@ -73,7 +73,6 @@ class DetailScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  // Hiển thị tâm trạng trong khung tròn nổi bật
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: const BoxDecoration(
@@ -96,6 +95,39 @@ class DetailScreen extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 20),
                 child: Divider(thickness: 0.8, color: Color(0xFFFDE8E8)),
               ),
+
+              // --- PHẦN HIỂN THỊ ẢNH ĐÃ THÊM ---
+              // Kiểm tra nếu trong model có chứa đường dẫn ảnh
+              if (diary.images.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.file(
+                      File(diary.images[0]), // Lấy đường dẫn ảnh đầu tiên
+                      width: double.infinity,
+                      height: 250,
+                      fit: BoxFit.cover,
+                      // Xử lý nếu ảnh bị xóa khỏi bộ nhớ máy
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 100,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.broken_image_outlined, color: Colors.grey),
+                            Text("Ảnh không còn tồn tại trên máy", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
               Text(
                 diary.title,
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
@@ -103,7 +135,7 @@ class DetailScreen extends StatelessWidget {
               const SizedBox(height: 15),
               Text(
                 diary.content,
-                style: TextStyle(fontSize: 17, height: 1.8, color: Colors.grey[800]), // Tăng khoảng cách dòng cho dễ đọc
+                style: TextStyle(fontSize: 17, height: 1.8, color: Colors.grey[800]),
               ),
             ],
           ),

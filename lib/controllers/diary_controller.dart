@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Thêm import này
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/diary_model.dart';
 
 class DiaryController with ChangeNotifier {
@@ -10,7 +10,6 @@ class DiaryController with ChangeNotifier {
   String get _currentUserId => FirebaseAuth.instance.currentUser?.uid ?? '';
 
   Stream<List<Diary>> get diariesStream {
-    // Thêm điều kiện where để lọc theo userId
     return _db
         .where('userId', isEqualTo: _currentUserId)
         .orderBy('date', descending: true)
@@ -22,44 +21,62 @@ class DiaryController with ChangeNotifier {
     });
   }
 
-  Future<void> addDiary(String title, String content, String date, String mood) async {
+  // Cập nhật hàm addDiary dùng tham số có tên {}
+  Future<void> addDiary({
+    required String title,
+    required String content,
+    required String date,
+    required String mood,
+    String? imagePath, // Tham số ảnh từ điện thoại
+  }) async {
     try {
       await _db.add({
         'title': title,
         'content': content,
         'date': date,
         'mood': mood,
-        'userId': _currentUserId, // Lưu thêm ID người dùng
+        'userId': _currentUserId,
         'thumbnailImageUrl': 'https://cdn-icons-png.flaticon.com/512/1000/1000957.png',
+        'images': imagePath != null ? [imagePath] : [],
       });
       notifyListeners();
     } catch (e) {
-      print("Lỗi: $e");
+      print("Lỗi khi thêm: $e");
     }
   }
 
-  // 3. Hàm Xóa trên Firestore
+  // Hàm Cập nhật
+  Future<void> updateDiary({
+    required String id,
+    required String title,
+    required String content,
+    required String date,
+    required String mood,
+    String? imagePath,
+  }) async {
+    try {
+      Map<String, dynamic> data = {
+        'title': title,
+        'content': content,
+        'date': date,
+        'mood': mood,
+      };
+      if (imagePath != null) {
+        data['images'] = [imagePath];
+      }
+      await _db.doc(id).update(data);
+      notifyListeners();
+    } catch (e) {
+      print("Lỗi cập nhật: $e");
+    }
+  }
+
   Future<void> deleteDiary(String id) async {
     try {
       await _db.doc(id).delete();
       notifyListeners();
     } catch (e) {
       print("Lỗi khi xóa: $e");
-    }
-  }
-
-  // 4. Hàm Cập nhật trên Firestore
-  Future<void> updateDiary(String id, String title, String content, String date, String mood) async {
-    try {
-      await _db.doc(id).update({
-        'title': title,
-        'content': content,
-        'date': date,
-        'mood': mood,
-      });
-      notifyListeners();
-    } catch (e) {
-      print("Lỗi khi cập nhật: $e");
     }
   }
 }

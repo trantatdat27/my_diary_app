@@ -5,6 +5,7 @@ class Diary {
   final String date;
   final String mood;
   final String? thumbnailImageUrl;
+  final List<String> images;
 
   Diary({
     this.id,
@@ -13,6 +14,7 @@ class Diary {
     required this.date,
     required this.mood,
     this.thumbnailImageUrl,
+    this.images = const [],
   });
 
   // Chuyển dữ liệu thành Map để lưu lên Firestore
@@ -23,6 +25,7 @@ class Diary {
       'date': date,
       'mood': mood,
       'thumbnailImageUrl': thumbnailImageUrl,
+      'images': images,
     };
   }
 
@@ -35,6 +38,7 @@ class Diary {
       date: map['date'] ?? '',
       mood: map['mood'] ?? '😊',
       thumbnailImageUrl: map['thumbnailImageUrl'],
+      images: List<String>.from(map['images'] ?? []),
     );
   }
 }
