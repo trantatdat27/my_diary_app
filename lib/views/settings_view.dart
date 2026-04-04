@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../notification_service.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -59,7 +61,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (picked != null && picked != _reminderTime) {
       setState(() => _reminderTime = picked);
-      await _updateSettings({'reminderTime': "${picked.hour}:${picked.minute}"});
+      // Dùng padLeft để đảm bảo luôn là 2 chữ số (ví dụ: 09:05 thay vì 9:5)
+      final String hour = picked.hour.toString().padLeft(2, '0');
+      final String minute = picked.minute.toString().padLeft(2, '0');
+      final String formattedTime = "$hour:$minute";
+
+      await _updateSettings({'reminderTime': formattedTime});
+      if (_isNotificationEnabled) {
+        await NotificationService.scheduleNotification(picked);
+      }
       _showSnackBar("🔔 Đã đặt lịch nhắc nhở vào ${picked.format(context)}", Colors.green);
     }
   }
@@ -174,9 +184,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               "Thông báo hàng ngày",
               Icons.notifications_active_outlined,
               switchValue: _isNotificationEnabled,
-              onChanged: (val) {
+              onChanged: (val) async {
                 setState(() => _isNotificationEnabled = val);
-                _updateSettings({'isNotificationEnabled': val});
+                await _updateSettings({'isNotificationEnabled': val});
+
+                if (val) {
+                  // Nếu bật lại, lập lịch thông báo với giờ hiện tại
+                  await NotificationService.scheduleNotification(_reminderTime);
+                } else {
+                  // Nếu tắt, phải hủy tất cả các lịch đã đặt trong hệ thống
+                  await NotificationService.cancelAllNotifications();
+                }
               },
             ),
             if (_isNotificationEnabled)
@@ -188,6 +206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             const Divider(height: 30),
             _buildSectionTitle("Bảo mật"),
+            // Trong settings_view.dart
             _buildSettingTile(
               "Sử dụng khóa PIN",
               Icons.lock_person_outlined,

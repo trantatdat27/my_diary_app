@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/diary_controller.dart';
+import 'notification_service.dart';
 import 'views/home_screen.dart';
 import 'views/auth_screen.dart';
 import 'views/pin_lock_screen.dart';
@@ -11,6 +12,7 @@ import 'views/pin_lock_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await NotificationService.init();
   runApp(
     MultiProvider(
       providers: [

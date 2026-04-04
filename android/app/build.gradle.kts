@@ -12,6 +12,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -39,7 +40,10 @@ android {
         }
     }
 }
-
+dependencies {
+    // Thêm dòng này để hỗ trợ các hàm thời gian của Java 8 cho máy Android cũ
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
+}
 flutter {
     source = "../.."
 }
