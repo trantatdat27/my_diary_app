@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -21,6 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _hobbiesController = TextEditingController();
+  String? _currentAvatarBase64;
 
   void _handleSave() async {
     try {
@@ -29,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         age: _ageController.text,
         hobbies: _hobbiesController.text,
         email: _controller.currentUser?.email ?? "",
+        avatarUrl: _currentAvatarBase64,
       );
       await _controller.saveProfile(updatedProfile);
       setState(() => _isEditing = false);
@@ -78,6 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _nameController.text = data.fullName;
             _ageController.text = data.age;
             _hobbiesController.text = data.hobbies;
+            _currentAvatarBase64 = data.avatarUrl; // Lấy ảnh từ Firebase
           }
 
           return SingleChildScrollView(
@@ -87,7 +91,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 40),
                 _buildHeader(),
                 const SizedBox(height: 30),
-                _buildAvatar(),
+                _buildAvatar(_currentAvatarBase64), // Truyền chuỗi ảnh vào widget
+                const SizedBox(height: 10),
                 Text(_controller.currentUser?.email ?? "", style: const TextStyle(color: Colors.grey)),
                 const SizedBox(height: 30),
                 _buildField(Icons.badge_outlined, "Họ và tên", _nameController),
@@ -202,11 +207,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAvatar() {
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: const BoxDecoration(color: Color(0xFFFFB6C1), shape: BoxShape.circle),
-      child: const CircleAvatar(radius: 50, backgroundColor: Colors.white, child: Icon(Icons.person, size: 55)),
+  Widget _buildAvatar(String? base64String) {
+    return GestureDetector(
+      onTap: _isEditing ? () async {
+        String? result = await _controller.pickAndConvertImage();
+        if (result != null) {
+          setState(() => _currentAvatarBase64 = result);
+        }
+      } : null,
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        decoration: const BoxDecoration(color: Color(0xFFFFB6C1), shape: BoxShape.circle),
+        child: CircleAvatar(
+          radius: 50,
+          backgroundColor: Colors.white,
+          backgroundImage: (base64String != null && base64String.isNotEmpty)
+              ? MemoryImage(base64Decode(base64String))
+              : null,
+          child: (base64String == null || base64String.isEmpty)
+              ? const Icon(Icons.person, size: 55, color: Colors.grey)
+              : null,
+        ),
+      ),
     );
   }
 

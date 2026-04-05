@@ -5,12 +5,14 @@ class ProfileModel {
   final String age;
   final String hobbies;
   final String email;
+  final String? avatarUrl;
 
   ProfileModel({
     required this.fullName,
     required this.age,
     required this.hobbies,
     required this.email,
+    this.avatarUrl,
   });
 
   // Chuyển đổi từ Map (Firestore) sang Object
@@ -20,6 +22,7 @@ class ProfileModel {
       age: data['age'] ?? "",
       hobbies: data['hobbies'] ?? "",
       email: data['email'] ?? "",
+      avatarUrl: data['avatarUrl'],
     );
   }
 
@@ -30,6 +33,7 @@ class ProfileModel {
       'age': age,
       'hobbies': hobbies,
       'email': email,
+      'avatarUrl': avatarUrl,
       'lastUpdate': FieldValue.serverTimestamp(),
     };
   }

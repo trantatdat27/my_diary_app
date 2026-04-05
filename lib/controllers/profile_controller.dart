@@ -1,17 +1,34 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:my_diary_app/models/diary_model.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/profile_model.dart';
 import 'package:flutter/material.dart';
 
 class ProfileController extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ImagePicker _picker = ImagePicker();
 
   User? get currentUser => _auth.currentUser;
 
-  // Luồng dữ liệu profile từ Firestore
+  Future<String?> pickAndConvertImage() async {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,    // Giới hạn để giảm kích thước chuỗi Base64
+      imageQuality: 70, // Nén ảnh
+    );
+
+    if (image == null) return null;
+
+    File file = File(image.path);
+    List<int> imageBytes = await file.readAsBytes();
+    return base64Encode(imageBytes);
+  }
+
   Stream<DocumentSnapshot> get profileStream {
     return _firestore.collection('users').doc(currentUser?.uid).snapshots();
   }
@@ -25,7 +42,6 @@ class ProfileController extends ChangeNotifier {
         .set(profile.toMap(), SetOptions(merge: true));
   }
 
-  // Đăng xuất
   Future<void> signOut() async {
     await _auth.signOut();
   }
