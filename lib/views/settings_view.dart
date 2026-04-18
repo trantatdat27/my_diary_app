@@ -180,6 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Text("Cài đặt", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
             const SizedBox(height: 25),
             _buildSectionTitle("Nhắc nhở"),
+            // --- SETTING ITEM: Mục cài đặt sử dụng ListTile tích hợp Switch ---
             _buildSettingTile(
               "Thông báo hàng ngày",
               Icons.notifications_active_outlined,

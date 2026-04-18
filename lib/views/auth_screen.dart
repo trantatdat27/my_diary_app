@@ -101,6 +101,7 @@ class _AuthScreenState extends State<AuthScreen> {
               const Text("📔", style: TextStyle(fontSize: 80)),
               const SizedBox(height: 10),
               Text(
+                // --- HEADER: Tiêu đề động thay đổi theo chế độ Đăng nhập/Đăng ký ---
                 _isLogin ? "CHÀO MỪNG TRỞ LẠI 🌸" : "THÀNH VIÊN MỚI 🎀",
                 style: const TextStyle(
                     fontSize: 24,
@@ -108,6 +109,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     color: Color(0xFFD3A3A3)),
               ),
               const SizedBox(height: 30),
+              // --- INPUT FIELD: Ô nhập Email với icon chỉ dẫn ---
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -120,6 +122,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         borderSide: BorderSide.none)),
               ),
               const SizedBox(height: 15),
+              // --- INPUT FIELD: Ô nhập Mật khẩu có chức năng ẩn/hiện (obscureText) ---
               TextField(
                 controller: _passController,
                 obscureText: true,
@@ -132,6 +135,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         borderSide: BorderSide.none)),
               ),
               const SizedBox(height: 30),
+              // --- BUTTON: Nút hành động chính (Full-width, màu hồng pastel) ---
               ElevatedButton(
                 onPressed: _submit,
                 style: ElevatedButton.styleFrom(

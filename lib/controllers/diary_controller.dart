@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/diary_model.dart';
+import 'dart:convert';
+import 'dart:io';
 
 class DiaryController with ChangeNotifier {
   final CollectionReference _db = FirebaseFirestore.instance.collection('diaries');
@@ -21,13 +23,13 @@ class DiaryController with ChangeNotifier {
     });
   }
 
-  // Cập nhật hàm addDiary dùng tham số có tên {}
+// Trong DiaryController, tìm hàm thêm nhật ký của bạn và sửa như sau:
   Future<void> addDiary({
     required String title,
     required String content,
     required String date,
     required String mood,
-    String? imagePath, // Tham số ảnh từ điện thoại
+    String? imagePath, // Bây giờ nó nhận chuỗi Base64 trực tiếp
   }) async {
     try {
       await _db.add({
@@ -36,12 +38,12 @@ class DiaryController with ChangeNotifier {
         'date': date,
         'mood': mood,
         'userId': _currentUserId,
-        'thumbnailImageUrl': 'https://cdn-icons-png.flaticon.com/512/1000/1000957.png',
-        'images': imagePath != null ? [imagePath] : [],
+        'images': (imagePath != null && imagePath.isNotEmpty) ? [imagePath] : [],
+        'timestamp': FieldValue.serverTimestamp(),
       });
       notifyListeners();
     } catch (e) {
-      print("Lỗi khi thêm: $e");
+      print("Lỗi lưu nhật ký: $e");
     }
   }
 
@@ -61,9 +63,12 @@ class DiaryController with ChangeNotifier {
         'date': date,
         'mood': mood,
       };
-      if (imagePath != null) {
+
+      // Nếu có ảnh mới (Base64), cập nhật lại mảng images
+      if (imagePath != null && imagePath.isNotEmpty) {
         data['images'] = [imagePath];
       }
+
       await _db.doc(id).update(data);
       notifyListeners();
     } catch (e) {

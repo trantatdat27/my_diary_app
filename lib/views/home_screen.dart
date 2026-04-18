@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Danh sách các màn hình
   final List<Widget> _views = const [
-    HomeModernView(),     // Nội dung nằm ngay bên dưới file này
+    HomeModernView(),
     CalendarViewScreen(),
     ProfileScreen(),
     SettingsScreen(),
@@ -50,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFFFAFAFA),
       body: _views[_currentIndex],
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      // --- FAB: Nút thêm nhật ký mới lồng vào thanh điều hướng ---
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -62,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: const CircleBorder(),
         child: const Icon(Icons.add, color: Colors.white, size: 36),
       ),
+      // --- NAVIGATION: Thanh điều hướng phía dưới có khoét lỗ giữa ---
       bottomNavigationBar: BottomAppBar(
         elevation: 10,
         height: 70,
@@ -83,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// --- NỘI DUNG TAB TRANG CHỦ (Gộp chung vào đây) ---
+// --- NỘI DUNG TAB TRANG CHỦ ---
 class HomeModernView extends StatelessWidget {
   const HomeModernView({super.key});
 
@@ -124,6 +126,7 @@ class HomeModernView extends StatelessWidget {
               ),
             ),
           ),
+          // --- DATA LIST: Lắng nghe dữ liệu thời gian thực từ Firestore ---
           StreamBuilder<List<Diary>>(
             stream: controller.diariesStream,
             builder: (context, snapshot) {
@@ -172,7 +175,7 @@ class MoodItem extends StatelessWidget {
     );
   }
 }
-
+// --- CUSTOM CARD: Widget hiển thị tóm tắt nhật ký (bo góc 28, đổ bóng) ---
 class DiaryModernCard extends StatelessWidget {
   final Diary diary;
   const DiaryModernCard({super.key, required this.diary});

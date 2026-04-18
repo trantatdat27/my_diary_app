@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart'; // 1. Thêm import
-import 'dart:io'; // 2. Thêm import để dùng File
+import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+import 'dart:convert';
 import '../controllers/diary_controller.dart';
 import '../models/diary_model.dart';
+
 
 class AddScreen extends StatefulWidget {
   final Diary? diary;
@@ -51,34 +54,39 @@ class _AddScreenState extends State<AddScreen> {
     }
   }
 
-  void _submitData() {
+  void _submitData() async { // Phải có async
     if (_formKey.currentState!.validate()) {
       final diaryController = Provider.of<DiaryController>(context, listen: false);
+
+      String? base64Image;
+      // 1. Nếu có file ảnh mới được chọn từ máy, chuyển nó sang Base64
+      if (_imageFile != null) {
+        List<int> imageBytes = await _imageFile!.readAsBytes();
+        base64Image = base64Encode(imageBytes);
+      }
 
       if (widget.diary == null) {
         // --- CHẾ ĐỘ THÊM MỚI ---
         String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
-
-        diaryController.addDiary(
-          title: _titleController.text,        // Phải có chữ title:
-          content: _contentController.text,    // Phải có chữ content:
-          date: formattedDate,                 // Phải có chữ date:
-          mood: _selectedMood,                 // Phải có chữ mood:
-          imagePath: _imageFile?.path,         // Truyền path ảnh vào đây
+        await diaryController.addDiary(
+          title: _titleController.text,
+          content: _contentController.text,
+          date: formattedDate,
+          mood: _selectedMood,
+          imagePath: base64Image, // Truyền chuỗi Base64 đã xử lý
         );
-        Navigator.pop(context);
       } else {
         // --- CHẾ ĐỘ CẬP NHẬT ---
-        diaryController.updateDiary(
-          id: widget.diary!.id!,               // Phải có chữ id:
+        await diaryController.updateDiary(
+          id: widget.diary!.id!,
           title: _titleController.text,
           content: _contentController.text,
           date: widget.diary!.date,
           mood: _selectedMood,
-          imagePath: _imageFile?.path,
+          imagePath: base64Image, // Truyền chuỗi Base64 đã xử lý
         );
-        Navigator.of(context).popUntil((route) => route.isFirst);
       }
+      if (mounted) Navigator.pop(context);
     }
   }
 
@@ -105,22 +113,29 @@ class _AddScreenState extends State<AddScreen> {
                 onTap: _pickImage,
                 child: Container(
                   width: double.infinity,
-                  height: 180,
+                  height: 200,
                   decoration: BoxDecoration(
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: const Color(0xFFFDE8E8)),
                   ),
                   child: _imageFile != null
                       ? ClipRRect(
                     borderRadius: BorderRadius.circular(15),
-                    child: Image.file(_imageFile!, fit: BoxFit.cover),
+                    child: Image.file(_imageFile!, fit: BoxFit.cover), // Hiện ảnh VỪA CHỌN ngay lập tức
                   )
-                      : Column(
+                      : (widget.diary != null && widget.diary!.images.isNotEmpty)
+                      ? ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.memory(
+                      base64Decode(widget.diary!.images[0]), // Hiện ảnh CŨ từ database
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                      : const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.grey),
-                      Text("Thêm ảnh từ điện thoại", style: TextStyle(color: Colors.grey)),
+                    children: [
+                      Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
+                      Text("Chọn ảnh từ điện thoại", style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 ),
@@ -130,6 +145,7 @@ class _AddScreenState extends State<AddScreen> {
               // --- PHẦN CHỌN MOOD (Giữ nguyên của bạn) ---
               Text("Hôm nay bạn thấy thế nào?", style: TextStyle(color: Colors.grey[600])),
               const SizedBox(height: 10),
+              // --- MOOD PICKER: Danh sách Emoji chọn cảm xúc
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: _moods.map((mood) => Expanded(
@@ -161,9 +177,10 @@ class _AddScreenState extends State<AddScreen> {
                 validator: (val) => val == null || val.isEmpty ? 'Hãy nhập tiêu đề' : null,
               ),
               const SizedBox(height: 15),
+              // --- INPUT: Ô nhập nội dung hỗ trợ nhiều dòng (maxLines: 10) ---
               TextFormField(
                 controller: _contentController,
-                maxLines: 10, // Giảm xuống một chút để nhường chỗ cho ảnh
+                maxLines: 10,
                 decoration: InputDecoration(
                   labelText: "Nội dung",
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),

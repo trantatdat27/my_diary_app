@@ -95,6 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 10),
                 Text(_controller.currentUser?.email ?? "", style: const TextStyle(color: Colors.grey)),
                 const SizedBox(height: 30),
+                // --- INFO CARDS: Các trường thông tin cá nhân bọc trong Container
                 _buildField(Icons.badge_outlined, "Họ và tên", _nameController),
                 _buildField(Icons.cake_outlined, "Tuổi", _ageController, isNumber: true),
                 _buildField(Icons.favorite_border_rounded, "Sở thích", _hobbiesController, maxLines: 2),
@@ -218,6 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.all(3),
         decoration: const BoxDecoration(color: Color(0xFFFFB6C1), shape: BoxShape.circle),
+        // --- AVATAR: Ảnh đại diện dạng tròn, hỗ trợ hiển thị từ chuỗi Base64 ---
         child: CircleAvatar(
           radius: 50,
           backgroundColor: Colors.white,

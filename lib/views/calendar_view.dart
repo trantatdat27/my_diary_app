@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../controllers/diary_controller.dart';
 import '../models/diary_model.dart';
-// Import trực tiếp từ file home_screen.dart
 import 'home_screen.dart';
 
 class CalendarViewScreen extends StatefulWidget {
@@ -36,6 +35,7 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
 
           return Column(
             children: [
+              // --- CALENDAR WIDGET: Thư viện TableCalendar
               TableCalendar(
                 focusedDay: _focusedDay,
                 firstDay: DateTime.utc(2023, 1, 1),
@@ -68,6 +68,7 @@ class _CalendarViewScreenState extends State<CalendarViewScreen> {
               Expanded(
                 child: selectedDayDiaries.isEmpty
                     ? const Center(child: Text("Không có nhật ký nào 🐰"))
+                // --- FILTERED LIST: Danh sách bài viết được lọc theo ngày chọn trên lịch ---
                     : ListView.builder(
                   itemCount: selectedDayDiaries.length,
                   itemBuilder: (context, index) => DiaryModernCard(diary: selectedDayDiaries[index]),
