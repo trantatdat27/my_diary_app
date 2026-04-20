@@ -24,7 +24,6 @@ class NotificationService {
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
-
     await _notificationsPlugin.zonedSchedule(
       0,
       'Nhật ký hôm nay? ✍️',
